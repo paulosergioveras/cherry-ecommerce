@@ -1,9 +1,7 @@
 from rest_framework import status, viewsets, permissions
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils import timezone
 from datetime import timedelta
 
@@ -14,18 +12,17 @@ from ..serializers import (
     UserLoginSerializer,
     AdminLoginSerializer,
     UserSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    UserSessionSerializer
 )
 
 
 
 
-class AuthViewSet(viewsets.GenericViewSet):
+class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = UserSerializer
     
-    @action(detail=False, methods=['post'], url_path='register')
-    def register_user(self, request):
+    def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -41,9 +38,26 @@ class AuthViewSet(viewsets.GenericViewSet):
             }
         }, status=status.HTTP_201_CREATED)
     
-    @action(detail=False, methods=['post'], url_path='register/admin', 
-            permission_classes=[permissions.IsAuthenticated])
-    def register_admin(self, request):
+    def _create_session(self, user, refresh_token, request):
+        UserSession.objects.create(
+            user=user,
+            refresh_token=refresh_token,
+            ip_address=self._get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+    
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class RegisterAdminView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
         if not request.user.is_admin:
             return Response(
                 {'error': 'Apenas administradores podem cadastrar outros administradores.'},
@@ -58,9 +72,11 @@ class AuthViewSet(viewsets.GenericViewSet):
             'message': 'Administrador cadastrado com sucesso!',
             'user': UserSerializer(admin).data,
         }, status=status.HTTP_201_CREATED)
+
+class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
     
-    @action(detail=False, methods=['post'], url_path='login')
-    def login_user(self, request):
+    def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
@@ -78,10 +94,28 @@ class AuthViewSet(viewsets.GenericViewSet):
             }
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'], url_path='login/admin')
-    def login_admin(self, request):
+    def _create_session(self, user, refresh_token, request):
+        UserSession.objects.create(
+            user=user,
+            refresh_token=refresh_token,
+            ip_address=self._get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+    
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class LoginAdminView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def post(self, request):
         serializer = AdminLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=True)  
         user = serializer.validated_data['user']
         user.last_login = timezone.now()
         user.save(update_fields=['last_login'])
@@ -97,8 +131,27 @@ class AuthViewSet(viewsets.GenericViewSet):
             }
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'], url_path='guest')
-    def guest_access(self, request):
+    def _create_session(self, user, refresh_token, request):
+        UserSession.objects.create(
+            user=user,
+            refresh_token=refresh_token,
+            ip_address=self._get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+    
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+class GuestAccessView(APIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
         return Response({
             'message': 'Acesso de visitante permitido.',
             'user_type': 'GUEST',
@@ -108,10 +161,10 @@ class AuthViewSet(viewsets.GenericViewSet):
                 'Dados não serão salvos'
             ]
         }, status=status.HTTP_200_OK)
-    
-    @action(detail=False, methods=['post'], url_path='logout',
-            permission_classes=[permissions.IsAuthenticated])
-    def logout_user(self, request):
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
         try:
             refresh_token = request.data.get('refresh_token')
             if refresh_token:
@@ -131,28 +184,12 @@ class AuthViewSet(viewsets.GenericViewSet):
                 'error': 'Erro ao realizar logout.',
                 'details': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
-    
-    def _create_session(self, user, refresh_token, request):
-        UserSession.objects.create(
-            user=user,
-            refresh_token=refresh_token,
-            ip_address=self._get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            expires_at=timezone.now() + timedelta(days=7)
-        )
-    
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
     
     def get_queryset(self):
         user = self.request.user
@@ -160,12 +197,51 @@ class UserViewSet(viewsets.ModelViewSet):
             return User.objects.all()
         return User.objects.filter(id=user.id)
     
-    @action(detail=False, methods=['get'], url_path='me')
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def retrieve(self, request, pk=None):
+        user = self.get_object()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+    
+    def partial_update(self, request, pk=None):
+        user = self.get_object()
+        if user != request.user and not request.user.is_admin:
+            return Response(
+                {'error': 'Você não tem permissão para atualizar este usuário.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({
+            'message': 'Usuário atualizado com sucesso!',
+            'user': serializer.data
+        })
+    
+    def destroy(self, request, pk=None):
+        if not request.user.is_admin:
+            return Response(
+                {'error': 'Apenas administradores podem deletar usuários.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        user = self.get_object()
+        user.delete()
+        
+        return Response({
+            'message': 'Usuário deletado com sucesso!'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
     def get_current_user(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['patch'], url_path='me/update')
     def update_current_user(self, request):
         serializer = self.get_serializer(
             request.user, 
@@ -174,28 +250,12 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        
         return Response({
             'message': 'Perfil atualizado com sucesso!',
             'user': serializer.data
         })
     
-    @action(detail=False, methods=['post'], url_path='change-password')
-    def change_password(self, request):
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        user = request.user
-        user.set_password(serializer.validated_data['new_password'])
-        user.save()
-        
-        return Response({
-            'message': 'Senha alterada com sucesso!'
-        }, status=status.HTTP_200_OK)
-    
-    @action(detail=True, methods=['post'], url_path='activate',
-            permission_classes=[permissions.IsAuthenticated])
     def activate_user(self, request, pk=None):
         if not request.user.is_admin:
             return Response(
@@ -211,8 +271,6 @@ class UserViewSet(viewsets.ModelViewSet):
             'message': f'Usuário {user.email} ativado com sucesso!'
         })
     
-    @action(detail=True, methods=['post'], url_path='deactivate',
-            permission_classes=[permissions.IsAuthenticated])
     def deactivate_user(self, request, pk=None):
         if not request.user.is_admin:
             return Response(
@@ -235,18 +293,39 @@ class UserViewSet(viewsets.ModelViewSet):
             'message': f'Usuário {user.email} desativado com sucesso!'
         })
 
-class TokenViewSet(viewsets.GenericViewSet):
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        
+        return Response({
+            'message': 'Senha alterada com sucesso!'
+        }, status=status.HTTP_200_OK)
+
+class TokenViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
     
-    @action(detail=False, methods=['get'], url_path='validate',
-            permission_classes=[permissions.IsAuthenticated])
     def validate_token(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {'valid': False, 'error': 'Token inválido ou expirado.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
         return Response({
             'valid': True,
             'user': UserSerializer(request.user).data
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'], url_path='refresh')
     def refresh_token(self, request):
         refresh_token = request.data.get('refresh')
         
@@ -269,7 +348,9 @@ class TokenViewSet(viewsets.GenericViewSet):
 
 class UserSessionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserSession.objects.all()
+    serializer_class = UserSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
     
     def get_queryset(self):
         user = self.request.user
@@ -277,27 +358,27 @@ class UserSessionViewSet(viewsets.ReadOnlyModelViewSet):
             return UserSession.objects.all()
         return UserSession.objects.filter(user=user)
     
-    @action(detail=False, methods=['get'], url_path='active')
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def retrieve(self, request, pk=None):
+        session = self.get_object()
+        serializer = self.get_serializer(session)
+        return Response(serializer.data)
+    
     def active_sessions(self, request):
         sessions = self.get_queryset().filter(
             is_active=True,
             expires_at__gt=timezone.now()
         )
         
-        data = [{
-            'id': str(session.id),
-            'ip_address': session.ip_address,
-            'user_agent': session.user_agent,
-            'created_at': session.created_at,
-            'expires_at': session.expires_at,
-        } for session in sessions]
-        
-        return Response(data)
+        serializer = self.get_serializer(sessions, many=True)
+        return Response(serializer.data)
     
-    @action(detail=True, methods=['post'], url_path='revoke')
     def revoke_session(self, request, pk=None):
         session = self.get_object()
-        
         if session.user != request.user and not request.user.is_admin:
             return Response(
                 {'error': 'Você não tem permissão para revogar esta sessão.'},
