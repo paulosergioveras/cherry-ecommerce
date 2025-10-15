@@ -3,32 +3,30 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 import re
 
+CUSTOMER = 'customer'
+ADMIN = 'admin'
+ADMIN_MASTER = 'admin_master'
+    
+ROLE_CHOICES = [
+    (CUSTOMER, 'Cliente'),
+    (ADMIN, 'Administrador'),
+    (ADMIN_MASTER, 'Administrador Master'),
+]
 
 class UserManager(BaseUserManager):
-    """
-    Manager customizado para criação de usuários do e-commerce Cherry
-    """
-    
     def create_user(self, email, password=None, **extra_fields):
-        """
-        Cria um usuário comum (cliente)
-        """
         if not email:
             raise ValueError('O email é obrigatório')
         
         email = self.normalize_email(email)
         extra_fields.setdefault('username', email)  # Username será o email
         extra_fields.setdefault('role', User.CUSTOMER)
-        
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
     
     def create_admin(self, email, cpf, password=None, **extra_fields):
-        """
-        Cria um administrador (apenas ADM master pode criar)
-        """
         if not email:
             raise ValueError('O email é obrigatório')
         if not cpf:
@@ -38,16 +36,12 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('username', email)
         extra_fields['role'] = User.ADMIN
         extra_fields['is_staff'] = True
-        
         user = self.model(email=email, cpf=cpf, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
     
     def create_superuser(self, email, password=None, **extra_fields):
-        """
-        Cria um ADM Master (superusuário)
-        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields['role'] = User.ADMIN_MASTER
@@ -59,25 +53,7 @@ class UserManager(BaseUserManager):
         
         return self.create_admin(email, cpf='00000000000', password=password, **extra_fields)
 
-
 class User(AbstractUser):
-    """
-    Model de Usuário para o E-commerce Cherry
-    Gerencia clientes e administradores
-    """
-    
-    # Roles do sistema
-    CUSTOMER = 'customer'
-    ADMIN = 'admin'
-    ADMIN_MASTER = 'admin_master'
-    
-    ROLE_CHOICES = [
-        (CUSTOMER, 'Cliente'),
-        (ADMIN, 'Administrador'),
-        (ADMIN_MASTER, 'Administrador Master'),
-    ]
-    
-    # Campos básicos
     email = models.EmailField(max_length=255, unique=True, db_index=True)
     name = models.CharField(max_length=255, blank=False)
     cpf = models.CharField(
@@ -88,19 +64,14 @@ class User(AbstractUser):
         help_text="CPF obrigatório apenas para administradores"
     )
     phone = models.CharField(max_length=15, null=True, blank=True)
-    
-    # Role e permissões
     role = models.CharField(
         max_length=20, 
         choices=ROLE_CHOICES, 
         default=CUSTOMER
     )
-    
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    # Configuração de autenticação
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
     
@@ -187,7 +158,6 @@ class Address(models.Model):
         related_name='addresses'
     )
     
-    # Dados do endereço
     street = models.CharField(max_length=255, verbose_name="Rua")
     number = models.CharField(max_length=20, verbose_name="Número")
     complement = models.CharField(max_length=100, null=True, blank=True, verbose_name="Complemento")
@@ -195,11 +165,7 @@ class Address(models.Model):
     city = models.CharField(max_length=100, verbose_name="Cidade")
     state = models.CharField(max_length=2, verbose_name="Estado")
     zip_code = models.CharField(max_length=8, verbose_name="CEP")
-    
-    # Configurações
     is_default = models.BooleanField(default=False, verbose_name="Endereço padrão")
-    
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
