@@ -12,7 +12,9 @@ from .views import (
     UserSessionViewSet,
 )
 
+"""
 urlpatterns = [
+
     path('register/', RegisterView.as_view(), name='register'),
     path('register/admin/', RegisterAdminView.as_view(), name='register-admin'),
 
@@ -41,3 +43,4 @@ urlpatterns = [
     path('sessions/active/', UserSessionViewSet.as_view({'get': 'active_sessions'}), name='sessions-active'),
     path('sessions/<uuid:pk>/revoke/', UserSessionViewSet.as_view({'post': 'revoke_session'}), name='session-revoke'),
 ]
+"""
