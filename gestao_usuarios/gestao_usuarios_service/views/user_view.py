@@ -3,10 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 
-from ..models import User, Address, CUSTOMER, ADMIN, ADMIN_MASTER
+from ..models import Address, CUSTOMER, ADMIN, ADMIN_MASTER
 from ..serializers import (
     UserListSerializer,
     UserDetailSerializer,
@@ -18,8 +19,7 @@ from ..serializers import (
     AddressSerializer,
 )
 
-
-
+User = get_user_model() 
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]

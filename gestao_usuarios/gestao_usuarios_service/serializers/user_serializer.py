@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from ..models import User, Address, CUSTOMER, ADMIN, ADMIN_MASTER
+from django.contrib.auth import get_user_model
+from ..models import Address, CUSTOMER, ADMIN, ADMIN_MASTER
 
-
+User = get_user_model()
 
 
 class AddressSerializer(serializers.ModelSerializer):
