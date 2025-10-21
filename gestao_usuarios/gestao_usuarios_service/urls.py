@@ -2,66 +2,46 @@ from django.urls import path
 from .views import (
     RegisterView,
     RegisterAdminView,
+    LoginView,
+    LogoutView,
+    RefreshView,
+    VerifyRoleView,
+    VerifyTokenView,
     UserViewSet,
-    AddressViewSet
+    AddressViewSet,
 )
 
 urlpatterns = [
     # ==================== AUTENTICAÇÃO ====================
-    # Registro
     path('register/', RegisterView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('verify-role/', VerifyRoleView.as_view(), name='verify-role'),
+    path('verify-token/', VerifyTokenView.as_view(), name='verify-token'),
+    path('refresh/', RefreshView.as_view(), name='refresh'),
+    
+    # Registro de admin (apenas admin master)
     path('register/admin/', RegisterAdminView.as_view(), name='register-admin'),
     
     
     # ==================== USUÁRIOS - AÇÕES ESPECÍFICAS ====================
-    # Visualizar perfil do usuário autenticado
-    path('user/me/', UserViewSet.as_view({'get': 'me'}), name='user-me'),
-    
-    # Atualizar perfil do usuário autenticado
-    path('user/update-profile/', UserViewSet.as_view({'patch': 'update_profile'}), name='user-update-profile'),
-    
-    # Alterar senha
-    path('user/change-password/', UserViewSet.as_view({'post': 'change_password'}), name='user-change-password'),
-    
-    # Listar apenas administradores
-    path('user/list-admins/', UserViewSet.as_view({'get': 'list_admins'}), name='list-admins'),
+    # Perfil do usuário autenticado
+    path('users/me/', UserViewSet.as_view({'get': 'me'}), name='users-me'),
+    path('users/me/update/', UserViewSet.as_view({'patch': 'me_update'}), name='users-me-update'),
+    path('users/change-password/', UserViewSet.as_view({'post': 'change_password'}), name='users-change-password'),
     
     
     # ==================== USUÁRIOS - CRUD ====================
-    # Listar todos os usuários
-    path('user/', UserViewSet.as_view({'get': 'list'}), name='users-list'),
-    
-    # Detalhe de um usuário
-    path('user/<int:pk>/', UserViewSet.as_view({'get': 'retrieve'}), name='user-detail'),
-    
-    # Atualizar um usuário
-    path('user/<int:pk>/update/', UserViewSet.as_view({'patch': 'partial_update'}), name='user-update'),
-    
-    # Deletar um usuário
-    path('user/<int:pk>/delete/', UserViewSet.as_view({'delete': 'destroy'}), name='user-delete'),
-    
-    # Ativar usuário
-    path('user/<int:pk>/activate/', UserViewSet.as_view({'post': 'activate'}), name='user-activate'),
-    
-    # Desativar usuário
-    path('user/<int:pk>/deactivate/', UserViewSet.as_view({'post': 'deactivate'}), name='user-deactivate'),
+    path('users/', UserViewSet.as_view({'get': 'list'}), name='users-list'),
+    path('users/<int:pk>/', UserViewSet.as_view({'get': 'retrieve'}), name='users-detail'),
+    path('users/<int:pk>/update/', UserViewSet.as_view({'patch': 'partial_update'}), name='users-update'),
+    path('users/<int:pk>/delete/', UserViewSet.as_view({'delete': 'destroy'}), name='users-delete'),
     
     
-    # ==================== ENDEREÇOS - AÇÕES ESPECÍFICAS ====================
-    # Criar novo endereço
-    path('addresses/create/', AddressViewSet.as_view({'post': 'create'}), name='address-create'),
-    
-    
-    # ==================== ENDEREÇOS - CRUD ====================
-    # Listar endereços
+    # ==================== ENDEREÇOS ====================
     path('addresses/', AddressViewSet.as_view({'get': 'list'}), name='addresses-list'),
-    
-    # Detalhe de endereço
-    path('addresses/<int:pk>/', AddressViewSet.as_view({'get': 'retrieve'}), name='address-detail'),
-    
-    # Atualizar endereço
-    path('addresses/<int:pk>/update/', AddressViewSet.as_view({'patch': 'partial_update'}), name='address-update'),
-    
-    # Deletar endereço
-    path('addresses/<int:pk>/delete/', AddressViewSet.as_view({'delete': 'destroy'}), name='address-delete'),
+    path('addresses/create/', AddressViewSet.as_view({'post': 'create'}), name='addresses-create'),
+    path('addresses/<int:pk>/', AddressViewSet.as_view({'get': 'retrieve'}), name='addresses-detail'),
+    path('addresses/<int:pk>/update/', AddressViewSet.as_view({'patch': 'partial_update'}), name='addresses-update'),
+    path('addresses/<int:pk>/delete/', AddressViewSet.as_view({'delete': 'destroy'}), name='addresses-delete'),
 ]
