@@ -4,46 +4,33 @@ services:
     build: ./gateway
     container_name: api-gateway
     ports:
-      - "8008:80"
+      - "8000:8000"
     volumes:
       - ./gateway:/app
     networks:
       - my-network
     depends_on:
-      - auth-service
+      - gestao-usuarios-service
 
-  auth-service:
-    build: ./auth
-    container_name: auth-service
-    ports:
-      - "8000:80"
-    volumes:
-      - ./auth:/app
-      - auth_db:/app/data
-    networks:
-      - my-network
 
-  # Serviço de Gestão de Usuários
   gestao-usuarios-service:
     build: ./gestao_usuarios
     container_name: gestao-usuarios-service
     ports:
-      - "8002:80"
+      - "8001:8001"
     volumes:
       - ./gestao_usuarios:/app
       - usuarios_db:/app/data
       - ./gestao_usuarios/media:/app/media:rw,z
     networks:
       - my-network
-    depends_on:
-      - auth-service
 
   # Serviço de Gestão de Produtos
   gestao-produtos-service:
     build: ./gestao_produtos
     container_name: gestao-produtos-service
     ports:
-      - "8003:80"
+      - "8002:8002"
     volumes:
       - ./gestao_produtos:/app
       - produtos_db:/app/data
@@ -51,21 +38,20 @@ services:
     networks:
       - my-network
     depends_on:
-      - auth-service
+      - gestao-usuarios-service
 
   # Serviço de Gestão de Pedidos
   gestao-pedidos-service:
     build: ./gestao_pedidos
     container_name: gestao-pedidos-service
     ports:
-      - "8004:80"
+      - "8003:8003"
     volumes:
       - ./gestao_pedidos:/app
       - pedidos_db:/app/data
     networks:
       - my-network
     depends_on:
-      - auth-service
       - gestao-produtos-service
       - gestao-usuarios-service
 
@@ -74,14 +60,14 @@ services:
     build: ./recomendacao
     container_name: recomendacao-service
     ports:
-      - "8001:80"
+      - "8004:8004"
     volumes:
       - ./recomendacao:/app
       - recomendacao_db:/app/data
     networks:
       - my-network
     depends_on:
-      - auth-service
+      - gestao-usuarios-service
       - gestao-produtos-service
       - gestao-pedidos-service
 
@@ -90,14 +76,14 @@ services:
     build: ./pagamento
     container_name: pagamento-service
     ports:
-      - "8005:80"
+      - "8005:8005"
     volumes:
       - ./pagamento:/app
       - pagamento_db:/app/data
     networks:
       - my-network
     depends_on:
-      - auth-service
+      - gestao-usuarios-service
       - gestao-pedidos-service
 
   # Serviço de Notificação
@@ -105,14 +91,13 @@ services:
     build: ./notificacao
     container_name: notificacao-service
     ports:
-      - "8006:80"
+      - "8006:8006"
     volumes:
       - ./notificacao:/app
       - notificacao_db:/app/data
     networks:
       - my-network
     depends_on:
-      - auth-service
       - gestao-usuarios-service
 
   # Frontend Django
@@ -120,7 +105,7 @@ services:
     build: ./frontend
     container_name: cherry-frontend
     ports:
-      - "8007:80"
+      - "8007:8007"
     volumes:
       - ./frontend:/app
       - frontend_static:/app/staticfiles
@@ -130,7 +115,6 @@ services:
       - api-gateway
 
 volumes:
-  auth_db:
   usuarios_db:
   produtos_db:
   pedidos_db:
