@@ -27,7 +27,7 @@ urlpatterns = [
     
     # ==================== PRODUTOS ====================
     # Listar produtos
-    path('', ProductViewSet.as_view({'get': 'list'}), name='products-list'),
+    path('products/', ProductViewSet.as_view({'get': 'list'}), name='products-list'),
     
     # Produtos em destaque
     path('featured/', ProductViewSet.as_view({'get': 'featured'}), name='products-featured'),
