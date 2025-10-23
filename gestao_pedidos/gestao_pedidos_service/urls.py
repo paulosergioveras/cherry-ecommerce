@@ -4,7 +4,7 @@ from .views import OrderViewSet
 urlpatterns = [
     # ==================== PEDIDOS ====================
     # Listar pedidos
-    path('orders/', OrderViewSet.as_view({'get': 'list'}), name='orders-list'),
+    path('list/', OrderViewSet.as_view({'get': 'list'}), name='orders-list'),
     
     # Meus pedidos
     path('my-orders/', OrderViewSet.as_view({'get': 'my_orders'}), name='orders-my-orders'),
