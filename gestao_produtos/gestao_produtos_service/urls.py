@@ -27,7 +27,7 @@ urlpatterns = [
     
     # ==================== PRODUTOS ====================
     # Listar produtos
-    path('products/', ProductViewSet.as_view({'get': 'list'}), name='products-list'),
+    path('list/', ProductViewSet.as_view({'get': 'list'}), name='products-list'),
     
     # Produtos em destaque
     path('featured/', ProductViewSet.as_view({'get': 'featured'}), name='products-featured'),
@@ -39,7 +39,7 @@ urlpatterns = [
     path('create/', ProductViewSet.as_view({'post': 'create'}), name='products-create'),
     
     # Detalhe de produto
-    path('<slug:slug>/', ProductViewSet.as_view({'get': 'retrieve'}), name='products-detail'),
+    path('<slug:slug>/detail', ProductViewSet.as_view({'get': 'retrieve'}), name='products-detail'),
     
     # Atualizar produto
     path('<slug:slug>/update/', ProductViewSet.as_view({'patch': 'partial_update'}), name='products-update'),
