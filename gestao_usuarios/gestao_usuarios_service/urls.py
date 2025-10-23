@@ -26,16 +26,16 @@ urlpatterns = [
     
     # ==================== USUÁRIOS - AÇÕES ESPECÍFICAS ====================
     # Perfil do usuário autenticado
-    path('users/me/', UserViewSet.as_view({'get': 'me'}), name='users-me'),
-    path('users/me/update/', UserViewSet.as_view({'patch': 'me_update'}), name='users-me-update'),
-    path('users/change-password/', UserViewSet.as_view({'post': 'change_password'}), name='users-change-password'),
+    path('me/', UserViewSet.as_view({'get': 'me'}), name='users-me'),
+    path('me/update/', UserViewSet.as_view({'patch': 'me_update'}), name='users-me-update'),
+    path('change-password/', UserViewSet.as_view({'post': 'change_password'}), name='users-change-password'),
     
     
     # ==================== USUÁRIOS - CRUD ====================
-    path('users/', UserViewSet.as_view({'get': 'list'}), name='users-list'),
-    path('users/<int:pk>/', UserViewSet.as_view({'get': 'retrieve'}), name='users-detail'),
-    path('users/<int:pk>/update/', UserViewSet.as_view({'patch': 'partial_update'}), name='users-update'),
-    path('users/<int:pk>/delete/', UserViewSet.as_view({'delete': 'destroy'}), name='users-delete'),
+    path('list/', UserViewSet.as_view({'get': 'list'}), name='users-list'),
+    path('<int:pk>/detail', UserViewSet.as_view({'get': 'retrieve'}), name='users-detail'),
+    path('<int:pk>/update/', UserViewSet.as_view({'patch': 'partial_update'}), name='users-update'),
+    path('<int:pk>/delete/', UserViewSet.as_view({'delete': 'destroy'}), name='users-delete'),
     
     
     # ==================== ENDEREÇOS ====================
