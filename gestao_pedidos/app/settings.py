@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
+    #'corsheaders',
 
     'gestao_pedidos_service',
 ]
@@ -154,7 +154,7 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
 }
 
-CORS_ALLOW_ALL_ORIGINS = True  # Apenas para desenvolvimento
+#CORS_ALLOW_ALL_ORIGINS = True  # Apenas para desenvolvimento
 
 # URLs dos outros microsserviços
 USERS_SERVICE_URL = os.getenv('USERS_SERVICE_URL', 'http://gestao-usuarios-service:8001')

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db.models import Q
 from django.db.models import Count, Sum
 from decimal import Decimal
-import requests
+#import request
 import os
 
 from ..models import (

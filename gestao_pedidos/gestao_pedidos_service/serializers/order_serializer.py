@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from decimal import Decimal
-import requests
+#import requests
 import os
 
 from ..models import Order, OrderItem, OrderStatusHistory
