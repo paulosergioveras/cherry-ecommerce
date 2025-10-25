@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 from decimal import Decimal
-import requests
+#import requests
 import os
 import random
 import string

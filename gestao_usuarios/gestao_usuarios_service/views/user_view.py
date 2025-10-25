@@ -21,6 +21,7 @@ from ..serializers import (
 
 User = get_user_model() 
 
+'''
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -38,6 +39,7 @@ class RegisterView(APIView):
                 'access': str(refresh.access_token),
             }
         }, status=status.HTTP_201_CREATED)
+'''
 
 class RegisterAdminView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -58,6 +60,7 @@ class RegisterAdminView(APIView):
             'user': UserDetailSerializer(admin).data,
         }, status=status.HTTP_201_CREATED)
 
+'''
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -103,7 +106,9 @@ class LoginView(APIView):
                 'access': str(refresh.access_token),
             }
         }, status=status.HTTP_200_OK)
+'''
 
+'''
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -122,7 +127,9 @@ class LogoutView(APIView):
                 'error': 'Erro ao realizar logout.',
                 'details': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+'''
 
+'''
 class VerifyTokenView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -131,7 +138,9 @@ class VerifyTokenView(APIView):
             'valid': True,
             'user': UserDetailSerializer(request.user).data
         }, status=status.HTTP_200_OK)
+'''
 
+'''    
 class VerifyRoleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -143,7 +152,9 @@ class VerifyRoleView(APIView):
             'is_admin': user.is_admin,
             'is_admin_master': user.is_admin_master,
         }, status=status.HTTP_200_OK)
+'''
 
+'''
 class RefreshView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -166,6 +177,8 @@ class RefreshView(APIView):
                 {'error': 'Token inválido ou expirado.', 'details': str(e)},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+'''
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

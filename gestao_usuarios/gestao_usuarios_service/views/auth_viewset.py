@@ -22,6 +22,7 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
+        print("DEBUG - Request data:", request.data)
         try:
             user_data = request.data
             

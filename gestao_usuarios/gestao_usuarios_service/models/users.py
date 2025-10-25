@@ -20,7 +20,7 @@ class UserManager(BaseUserManager):
         
         email = self.normalize_email(email)
         extra_fields.setdefault('username', email)  # Username será o email
-        extra_fields.setdefault('role', User.CUSTOMER)
+        extra_fields.setdefault('role', CUSTOMER)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -34,7 +34,7 @@ class UserManager(BaseUserManager):
         
         email = self.normalize_email(email)
         extra_fields.setdefault('username', email)
-        extra_fields['role'] = User.ADMIN
+        extra_fields['role'] = ADMIN
         extra_fields['is_staff'] = True
         user = self.model(email=email, cpf=cpf, **extra_fields)
         user.set_password(password)
@@ -44,7 +44,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields['role'] = User.ADMIN_MASTER
+        extra_fields['role'] = ADMIN_MASTER
         
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser precisa ter is_staff=True.')
@@ -96,7 +96,7 @@ class User(AbstractUser):
         super().clean()
         
         # RN03: Administradores precisam de CPF
-        if self.role in [self.ADMIN, self.ADMIN_MASTER]:
+        if self.role in [ADMIN, ADMIN_MASTER]:
             if not self.cpf:
                 raise ValidationError({
                     'cpf': 'CPF é obrigatório para administradores'
@@ -107,7 +107,7 @@ class User(AbstractUser):
                 })
         
         # Clientes não precisam de CPF obrigatoriamente
-        if self.role == self.CUSTOMER and self.cpf:
+        if self.role == CUSTOMER and self.cpf:
             if not self._validate_cpf(self.cpf):
                 raise ValidationError({
                     'cpf': 'CPF inválido'
@@ -129,15 +129,15 @@ class User(AbstractUser):
     
     @property
     def is_customer(self):
-        return self.role == self.CUSTOMER
+        return self.role == CUSTOMER
     
     @property
     def is_admin(self):
-        return self.role == self.ADMIN
+        return self.role == ADMIN
     
     @property
     def is_admin_master(self):
-        return self.role == self.ADMIN_MASTER
+        return self.role == ADMIN_MASTER
     
     def can_create_admin(self):
         """
