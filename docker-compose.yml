@@ -100,20 +100,6 @@ services:
     depends_on:
       - gestao-usuarios-service
 
-  # Frontend Django
-  frontend:
-    build: ./frontend
-    container_name: cherry-frontend
-    ports:
-      - "8007:8007"
-    volumes:
-      - ./frontend:/app
-      - frontend_static:/app/staticfiles
-    networks:
-      - my-network
-    depends_on:
-      - api-gateway
-
 volumes:
   usuarios_db:
   produtos_db:
@@ -121,7 +107,6 @@ volumes:
   recomendacao_db:
   pagamento_db:
   notificacao_db:
-  frontend_static:
   redis_data:
 
 networks:
