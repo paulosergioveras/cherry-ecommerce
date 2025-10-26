@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RecomendacaoViewSet, AvaliacaoViewSet
+from .views import RecomendacaoViewSet
 
 urlpatterns = [
     path('obter_recomendacoes/', 
@@ -13,17 +13,4 @@ urlpatterns = [
     path('registrar_interacao/', 
          RecomendacaoViewSet.as_view({'post': 'registrar_interacao'}), 
          name='registrar-interacao'),
-    
-    # Avaliações
-    path('avaliacoes/', 
-         AvaliacaoViewSet.as_view({'get': 'list', 'post': 'create'}), 
-         name='avaliacoes'),
-    
-    path('avaliacoes/<int:pk>/', 
-         AvaliacaoViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), 
-         name='avaliacao-detail'),
-    
-    path('avaliacoes/por_produto/', 
-         AvaliacaoViewSet.as_view({'get': 'por_produto'}), 
-         name='avaliacoes-por-produto'),
 ]

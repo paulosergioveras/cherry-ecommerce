@@ -1,4 +1,4 @@
-import requests
+#import requests
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.cache import cache
