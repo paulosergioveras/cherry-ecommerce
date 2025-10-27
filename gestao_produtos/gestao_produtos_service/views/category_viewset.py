@@ -27,7 +27,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.annotate(
-        products_count=Count('products', filter=Q(products__is_active=True))
+        products_count_annotated=Count('products', filter=Q(products__is_active=True))
     )
     permission_classes = [IsAdminOrReadOnly]
     lookup_field = 'slug'

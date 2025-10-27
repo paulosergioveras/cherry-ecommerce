@@ -1,26 +1,28 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
+import time
 import re
 
+# Simplified role model: use boolean flags instead of role string
 CUSTOMER = 'customer'
 ADMIN = 'admin'
 ADMIN_MASTER = 'admin_master'
-    
-ROLE_CHOICES = [
-    (CUSTOMER, 'Cliente'),
-    (ADMIN, 'Administrador'),
-    (ADMIN_MASTER, 'Administrador Master'),
-]
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('O email é obrigatório')
+        # CPF agora é obrigatório para todos os usuários
+        cpf = extra_fields.get('cpf')
+        if not cpf:
+            raise ValueError('O CPF é obrigatório')
         
         email = self.normalize_email(email)
         extra_fields.setdefault('username', email)  # Username será o email
-        extra_fields.setdefault('role', CUSTOMER)
+        # Garantir flags booleans padrão
+        extra_fields.setdefault('is_admin', False)
+        extra_fields.setdefault('is_admin_master', False)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -34,7 +36,8 @@ class UserManager(BaseUserManager):
         
         email = self.normalize_email(email)
         extra_fields.setdefault('username', email)
-        extra_fields['role'] = ADMIN
+        # Marca como administrador simples
+        extra_fields['is_admin'] = True
         extra_fields['is_staff'] = True
         user = self.model(email=email, cpf=cpf, **extra_fields)
         user.set_password(password)
@@ -44,31 +47,36 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields['role'] = ADMIN_MASTER
+        # Marca como admin master
+        extra_fields['is_admin_master'] = True
+        extra_fields['is_admin'] = True
         
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser precisa ter is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser precisa ter is_superuser=True.')
-        
-        return self.create_admin(email, cpf='00000000000', password=password, **extra_fields)
+
+        # generate a unique cpf if none provided to avoid UNIQUE conflicts
+        cpf = extra_fields.get('cpf')
+        if not cpf:
+            # use time ns to generate a numeric 11-digit string
+            cpf = str(time.time_ns())[-11:]
+        return self.create_admin(email, cpf=cpf, password=password, **extra_fields)
 
 class User(AbstractUser):
     email = models.EmailField(max_length=255, unique=True, db_index=True)
     name = models.CharField(max_length=255, blank=False)
     cpf = models.CharField(
-        max_length=11, 
-        unique=True, 
-        null=True, 
-        blank=True,
-        help_text="CPF obrigatório apenas para administradores"
+        max_length=11,
+        unique=True,
+        null=False,
+        blank=False,
+        help_text="CPF obrigatório para todos os usuários"
     )
     phone = models.CharField(max_length=15, null=True, blank=True)
-    role = models.CharField(
-        max_length=20, 
-        choices=ROLE_CHOICES, 
-        default=CUSTOMER
-    )
+    # Simplified role flags
+    is_admin = models.BooleanField(default=False)
+    is_admin_master = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -86,7 +94,8 @@ class User(AbstractUser):
         verbose_name_plural = 'Usuários'
         indexes = [
             models.Index(fields=['email']),
-            models.Index(fields=['role']),
+            models.Index(fields=['is_admin']),
+            models.Index(fields=['is_admin_master']),
         ]
     
     def clean(self):
@@ -95,23 +104,11 @@ class User(AbstractUser):
         """
         super().clean()
         
-        # RN03: Administradores precisam de CPF
-        if self.role in [ADMIN, ADMIN_MASTER]:
-            if not self.cpf:
-                raise ValidationError({
-                    'cpf': 'CPF é obrigatório para administradores'
-                })
-            if not self._validate_cpf(self.cpf):
-                raise ValidationError({
-                    'cpf': 'CPF inválido'
-                })
-        
-        # Clientes não precisam de CPF obrigatoriamente
-        if self.role == CUSTOMER and self.cpf:
-            if not self._validate_cpf(self.cpf):
-                raise ValidationError({
-                    'cpf': 'CPF inválido'
-                })
+        # CPF obrigatório para todos os usuários
+        if not self.cpf:
+            raise ValidationError({'cpf': 'CPF é obrigatório'})
+        if not self._validate_cpf(self.cpf):
+            raise ValidationError({'cpf': 'CPF inválido'})
     
     def save(self, *args, **kwargs):
         self.clean()
@@ -129,15 +126,8 @@ class User(AbstractUser):
     
     @property
     def is_customer(self):
-        return self.role == CUSTOMER
+        return not (self.is_admin or self.is_admin_master)
     
-    @property
-    def is_admin(self):
-        return self.role == ADMIN
-    
-    @property
-    def is_admin_master(self):
-        return self.role == ADMIN_MASTER
     
     def can_create_admin(self):
         """

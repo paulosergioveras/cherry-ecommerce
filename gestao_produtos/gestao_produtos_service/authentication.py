@@ -29,9 +29,14 @@ class GatewayJWTAuthentication(JWTAuthentication):
             user = AuthenticatedAnonymousUser()
             user.id = int(user_id)
             user.email = request.headers.get('X-User-Email', '')
-            user.role = request.headers.get('X-User-Role', '').lower()
+            role_val = request.headers.get('X-User-Role', '').lower()
+            user.role = role_val
+            # map role to boolean flags for compatibility
+            user.is_admin = role_val in ['admin', 'admin_master']
+            user.is_admin_master = role_val == 'admin_master'
+            user.is_customer = not (user.is_admin or user.is_admin_master)
             user.cpf = request.headers.get('X-User-CPF', '').lower()
-            user.nome = request.headers.get('X-User-Nome', '').lower()  
+            user.nome = request.headers.get('X-User-Nome', '').lower()
             user.access_token = request.headers.get('Authorization', '').split(' ')[-1]
             user.is_authenticated = True
             

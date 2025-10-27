@@ -160,11 +160,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     def destroy(self, request, slug=None):
         product = self.get_object()
 
-        if product.order_items.exists():
-            return Response({
-                 'error': 'Não é possível deletar produto com pedidos.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
         product.delete()
         
         return Response({

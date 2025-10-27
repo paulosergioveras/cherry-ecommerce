@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
-from ..models import Address, CUSTOMER, ADMIN, ADMIN_MASTER
+from ..models import Address
 
 User = get_user_model()
 
@@ -26,18 +26,21 @@ class AddressSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 class UserListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = (
             'id',
             'email',
             'name',
+            'cpf',
             'phone',
-            'role',
+            'is_active',
+            'is_admin',
+            'is_admin_master',
             'created_at',
+            'updated_at',
         )
-        read_only_fields = ('id', 'created_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
 
 class UserDetailSerializer(serializers.ModelSerializer):
     addresses = AddressSerializer(many=True, read_only=True)
@@ -50,12 +53,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'name',
             'cpf',
             'phone',
-            'role',
+            'is_admin',
+            'is_admin_master',
             'addresses',
             'created_at',
             'updated_at',
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'role')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'is_admin', 'is_admin_master')
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
@@ -68,12 +72,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         required=True
     )
     phone = serializers.CharField(required=False, allow_blank=True)
+    cpf = serializers.CharField(required=True)
 
     class Meta:
         model = User
         fields = (
             'email',
             'name',
+            'cpf',
             'phone',
             'password',
             'password_confirm',
@@ -85,6 +91,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 'Este email já está cadastrado.'
             )
         return value.lower()
+
+    def validate_cpf(self, value):
+        if not User._validate_cpf(value):
+            raise serializers.ValidationError('CPF inválido.')
+
+        if User.objects.filter(cpf=value).exists():
+            raise serializers.ValidationError('Este CPF já está cadastrado.')
+        return value
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -100,7 +114,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             name=validated_data['name'],
             password=validated_data['password'],
             phone=validated_data.get('phone', ''),
-            role=CUSTOMER,
+            cpf=validated_data.get('cpf'),
         )
         return user
 
@@ -216,10 +230,7 @@ class AdminUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'name',
             'phone',
-            'role',
+            'is_admin',
+            'is_admin_master',
         )
 
-    def validate_role(self, value):
-        if value not in [CUSTOMER, ADMIN, ADMIN_MASTER]:
-            raise serializers.ValidationError('Role inválido.')
-        return value

@@ -5,7 +5,7 @@ from ..models import Category
 
 
 class CategoryListSerializer(serializers.ModelSerializer):
-    products_count = serializers.IntegerField(read_only=True)
+    products_count = serializers.IntegerField(source='products_count_annotated',read_only=True)
     
     class Meta:
         model = Category
@@ -13,7 +13,7 @@ class CategoryListSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug', 'products_count')
 
 class SubcategorySerializer(serializers.ModelSerializer):
-    products_count = serializers.IntegerField(read_only=True)
+    products_count = serializers.IntegerField(source='products_count_annotated', read_only=True)
     
     class Meta:
         model = Category
@@ -21,8 +21,8 @@ class SubcategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug', 'products_count')
 
 class CategoryDetailSerializer(serializers.ModelSerializer):
+    products_count = serializers.IntegerField(source='products_count_annotated', read_only=True)
     subcategories = SubcategorySerializer(many=True, read_only=True)
-    products_count = serializers.IntegerField(read_only=True)
     parent_name = serializers.CharField(source='parent.name', read_only=True)
     full_path = serializers.CharField(source='get_full_path', read_only=True)
     is_parent = serializers.BooleanField(read_only=True)

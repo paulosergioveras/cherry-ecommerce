@@ -46,16 +46,20 @@ class MicroserviceRouter(APIView):
         """
         Define quais endpoints são públicos (não precisam de autenticação)
         """
+        if 'register/admin' in path:
+            return False
+
         unauthenticated_paths = [
             # Autenticação e cadastro
             'login',
             'login-guest',
             'admin-login',
-            'register',
+            # generic 'register' removed to avoid matching admin register
             'cadastro',
             'auth',
             'refresh',
             ('usuarios', 'POST'),  # Cadastro de usuário
+            'register',
             
             # Produtos (leitura pública)
             ('produtos', 'GET'),

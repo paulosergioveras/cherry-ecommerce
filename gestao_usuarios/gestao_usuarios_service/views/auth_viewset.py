@@ -318,12 +318,14 @@ class VerifyTokenView(generics.GenericAPIView):
                 {
                     "detail": "Token válido",
                     "user_id": user.id,
-                    "email": user.email,
-                    "name": user.name,
-                    "role": user.role,
+                    "user_email": user.email,
+                    "nome": user.name,
+                    "role": 'admin_master' if user.is_admin_master else ('admin' if user.is_admin else 'customer'),
                     "is_customer": user.is_customer,
                     "is_admin": user.is_admin,
-                    "is_admin_master": user.is_admin_master
+                    "is_admin_master": user.is_admin_master,
+                    "is_staff": user.is_staff,
+                    "cpf": user.cpf or ''
                 },
                 status=status.HTTP_200_OK
             )

@@ -6,8 +6,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
+from django.db import models
 
-from ..models import Address, CUSTOMER, ADMIN, ADMIN_MASTER
+from ..models import Address
 from ..serializers import (
     UserListSerializer,
     UserDetailSerializer,
@@ -20,26 +21,6 @@ from ..serializers import (
 )
 
 User = get_user_model() 
-
-'''
-class RegisterView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        refresh = RefreshToken.for_user(user)
-
-        return Response({
-            'message': 'Usuário cadastrado com sucesso!',
-            'user': UserDetailSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_201_CREATED)
-'''
 
 class RegisterAdminView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -59,126 +40,6 @@ class RegisterAdminView(APIView):
             'message': 'Administrador cadastrado com sucesso!',
             'user': UserDetailSerializer(admin).data,
         }, status=status.HTTP_201_CREATED)
-
-'''
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        email = request.data.get('email', '').lower()
-        password = request.data.get('password', '')
-
-        if not email or not password:
-            return Response(
-                {'error': 'Email e senha são obrigatórios.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'Email ou senha inválidos.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        if not user.check_password(password):
-            return Response(
-                {'error': 'Email ou senha inválidos.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        if not user.is_active:
-            return Response(
-                {'error': 'Esta conta está desativada.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        user.last_login = timezone.now()
-        user.save(update_fields=['last_login'])
-        refresh = RefreshToken.for_user(user)
-
-        return Response({
-            'message': 'Login realizado com sucesso!',
-            'user': UserDetailSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_200_OK)
-'''
-
-'''
-class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        try:
-            refresh_token = request.data.get('refresh_token')
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-
-            return Response({
-                'message': 'Logout realizado com sucesso!'
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'error': 'Erro ao realizar logout.',
-                'details': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-'''
-
-'''
-class VerifyTokenView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        return Response({
-            'valid': True,
-            'user': UserDetailSerializer(request.user).data
-        }, status=status.HTTP_200_OK)
-'''
-
-'''    
-class VerifyRoleView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response({
-            'role': user.role,
-            'is_customer': user.is_customer,
-            'is_admin': user.is_admin,
-            'is_admin_master': user.is_admin_master,
-        }, status=status.HTTP_200_OK)
-'''
-
-'''
-class RefreshView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        refresh_token = request.data.get('refresh')
-
-        if not refresh_token:
-            return Response(
-                {'error': 'Refresh token é obrigatório.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            token = RefreshToken(refresh_token)
-            return Response({
-                'access': str(token.access_token),
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(
-                {'error': 'Token inválido ou expirado.', 'details': str(e)},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-'''
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -201,17 +62,28 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_admin_master:
             return User.objects.all()
         elif user.is_admin:
-            return User.objects.filter(role=CUSTOMER)
+            # Admins can see only customers (users that are not admins)
+            return User.objects.filter(is_admin=False, is_admin_master=False)
         else:
             return User.objects.filter(id=user.id)
 
     def list(self, request):
-        queryset = self.get_queryset()
+        # Always list all users regardless of caller role
+        queryset = User.objects.all()
         role = request.query_params.get('role')
         search = request.query_params.get('search')
 
         if role:
-            queryset = queryset.filter(role=role)
+            # role query param supports: customer, admin, admin_master
+            if role == 'customer':
+                queryset = queryset.filter(is_admin=False, is_admin_master=False)
+            elif role == 'admin':
+                queryset = queryset.filter(is_admin=True, is_admin_master=False)
+            elif role == 'admin_master':
+                queryset = queryset.filter(is_admin_master=True)
+            else:
+                # invalid role value -> no results
+                queryset = queryset.none()
 
         if search:
             queryset = queryset.filter(
