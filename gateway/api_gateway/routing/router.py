@@ -145,11 +145,12 @@ class MicroserviceRouter(APIView):
                 headers.update({
                     'Authorization': request.headers.get('Authorization', ''),
                     'X-User-ID': str(user_info.get('user_id', '')),
-                    'X-User-Email': user_info.get('email', ''),
+                    'X-User-Email': user_info.get('user_email', ''),
                     'X-User-Nome': user_info.get('nome', ''),
                     'X-User-Is-Admin': 'true' if user_info.get('is_admin', False) else 'false',
                     'X-User-Is-Staff': 'true' if user_info.get('is_staff', False) else 'false',
                     'X-User-CPF': user_info.get('cpf', ''),
+                    'X-User-Role': user_info.get('role', '')
                 })
             
             logger.debug(f"Request headers: {headers}")

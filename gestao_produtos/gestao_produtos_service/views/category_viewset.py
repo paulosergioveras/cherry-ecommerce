@@ -46,7 +46,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
                 hasattr(self.request.user, 'is_admin') and
                 (self.request.user.is_admin or self.request.user.is_admin_master)):
             queryset = queryset.filter(is_active=True)
-        
         return queryset
     
     def list(self, request):

@@ -21,6 +21,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
+        print(f'view:', {request.user.is_authenticated})
         return (
             request.user and 
             request.user.is_authenticated and 
