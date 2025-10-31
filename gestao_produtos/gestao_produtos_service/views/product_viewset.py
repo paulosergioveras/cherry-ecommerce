@@ -51,6 +51,22 @@ class ProductViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+
+    @action(detail=True, methods=['GET'] ) 
+    def get_product_by_id(self, request, pk=None):
+        try:
+            product = Product.objects.get(id=pk)
+            serializer = ProductDetailSerializer(product, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(
+                {"error": "Produto nao encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+
+
     def list(self, request):
         queryset = self.get_queryset()
         category_slug = request.query_params.get('category')

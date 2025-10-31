@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     'gestao-pedidos-service',  
     'gestao_pedidos_service', 
     '.localhost',    
+    '*'
 ]
 
 

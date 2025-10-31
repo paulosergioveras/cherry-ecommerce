@@ -61,4 +61,7 @@ urlpatterns = [
     
     # Remover imagem
     path('<slug:slug>/remove-image/<int:image_id>/', ProductViewSet.as_view({'delete': 'remove_image'}), name='products-remove-image'),
+
+    #Get produto por id
+    path('produto/<int:pk>/', ProductViewSet.as_view({'get': 'get_product_by_id'}), name='product_by_id'),
 ]

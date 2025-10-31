@@ -36,7 +36,7 @@ class GatewayJWTAuthentication(JWTAuthentication):
             user.is_admin_master = role_val == 'admin_master'
             user.is_customer = not (user.is_admin or user.is_admin_master)
             user.cpf = request.headers.get('X-User-CPF', '').lower()
-            user.nome = request.headers.get('X-User-Nome', '').lower()
+            user.name = request.headers.get('X-User-Nome', '').lower()
             user.access_token = request.headers.get('Authorization', '').split(' ')[-1]
             user.is_authenticated = True
             

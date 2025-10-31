@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db.models import Q
 from django.db.models import Count, Sum
 from decimal import Decimal
-#import request
+import requests
 import os
 
 from ..models import (
@@ -110,10 +110,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         items_data = serializer.validated_data['items']
         products_info = []
         subtotal = Decimal('0.00')
-        
+        print(f'items_data', items_data)
         for item_data in items_data:
             product = self._get_product(item_data['product_id'], request)
-            
+        
+            print(f'produto', product)
             if not product:
                 return Response(
                     {'error': f'Produto {item_data["product_id"]} não encontrado.'},
@@ -313,15 +314,25 @@ class OrderViewSet(viewsets.ModelViewSet):
             products_url = os.getenv('PRODUCTS_SERVICE_URL', 'http://gestao-produtos-service:8002')
             token = request.headers.get('Authorization', '').replace('Bearer ', '')
             
+            print(f'Requesting product {product_id} from products service')
+            print(f'URL: {products_url}/api/v1/produtos/produto/{product_id}/')
+            
+        
             response = requests.get(
-                f'{products_url}/api/v1/products/{product_id}/',
+                f'{products_url}/api/v1/produtos/produto/{product_id}/',
                 timeout=5
             )
             
+            print(f'Response status: {response.status_code}')
+            print(f'Response content: {response.text}')
+
             if response.status_code == 200:
                 return response.json()
+                
+            print(f'Error response from products service: {response.text}')
             return None
-        except:
+        except Exception as e:
+            print(f'Exception in _get_product: {str(e)}')
             return None
     
     def _get_address(self, user_id, address_id, request):
@@ -353,25 +364,41 @@ class OrderViewSet(viewsets.ModelViewSet):
     def _decrease_product_stock(self, product_id, quantity, request):
         try:
             products_url = os.getenv('PRODUCTS_SERVICE_URL', 'http://gestao-produtos-service:8002')
-            token = request.headers.get('Authorization', '').replace('Bearer ', '')
-            
+            headers = {}
+            for h in [
+                'X-Forwarded-From-Gateway', 'X-User-ID', 'X-User-Email',
+                'X-User-Nome', 'X-User-Is-Admin', 'X-User-Is-Staff',
+                'X-User-CPF', 'X-User-Role', 'Authorization'
+            ]:
+                val = request.headers.get(h)
+                if val:
+                    headers[h] = val
+
             requests.post(
-                f'{products_url}/api/v1/{product_id}/update-stock/',
-                headers={'Authorization': f'Bearer {token}'},
+                f'{products_url}/api/v1/produtos/{product_id}/update-stock/',
+                headers=headers if headers else None,
                 json={'quantity': quantity, 'operation': 'remove'},
                 timeout=5
             )
         except:
             pass
-    
+
     def _increase_product_stock(self, product_id, quantity, request):
         try:
             products_url = os.getenv('PRODUCTS_SERVICE_URL', 'http://gestao-produtos-service:8002')
-            token = request.headers.get('Authorization', '').replace('Bearer ', '')
-            
+            headers = {}
+            for h in [
+                'X-Forwarded-From-Gateway', 'X-User-ID', 'X-User-Email',
+                'X-User-Nome', 'X-User-Is-Admin', 'X-User-Is-Staff',
+                'X-User-CPF', 'X-User-Role', 'Authorization'
+            ]:
+                val = request.headers.get(h)
+                if val:
+                    headers[h] = val
+
             requests.post(
-                f'{products_url}/api/v1/{product_id}/update-stock/',
-                headers={'Authorization': f'Bearer {token}'},
+                f'{products_url}/api/v1/produtos/{product_id}/update-stock/',
+                headers=headers if headers else None,
                 json={'quantity': quantity, 'operation': 'add'},
                 timeout=5
             )

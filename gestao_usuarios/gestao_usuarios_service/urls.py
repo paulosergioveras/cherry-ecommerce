@@ -33,7 +33,7 @@ urlpatterns = [
     
     # ==================== USUÁRIOS - CRUD ====================
     path('list/', UserViewSet.as_view({'get': 'list'}), name='users-list'),
-    path('<int:pk>/detail', UserViewSet.as_view({'get': 'retrieve'}), name='users-detail'),
+    path('<int:pk>/detail/', UserViewSet.as_view({'get': 'retrieve'}), name='users-detail'),
     path('<int:pk>/update/', UserViewSet.as_view({'patch': 'partial_update'}), name='users-update'),
     path('<int:pk>/delete/', UserViewSet.as_view({'delete': 'destroy'}), name='users-delete'),
     
