@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 from decimal import Decimal
-#import requests
+import requests
 import os
 import random
 import string
@@ -283,10 +283,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     def _get_order_data(self, order_id, user_id):
         orders_url = os.getenv('ORDERS_SERVICE_URL', 'http://gestao-pedidos-service:8003')
-        
+    
         try:
             response = requests.get(
-                f'{orders_url}/api/v1/orders/{order_id}/',
+                f'{orders_url}/api/v1/orders/pedido/{order_id}/',
                 timeout=5
             )
             

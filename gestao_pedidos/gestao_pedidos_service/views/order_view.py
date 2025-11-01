@@ -50,6 +50,10 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return queryset.filter(user_id=user.id)
     
+
+
+
+    
     def list(self, request):
         queryset = self.get_queryset()
         status_filter = request.query_params.get('status')
@@ -110,11 +114,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         items_data = serializer.validated_data['items']
         products_info = []
         subtotal = Decimal('0.00')
-        print(f'items_data', items_data)
+
         for item_data in items_data:
             product = self._get_product(item_data['product_id'], request)
         
-            print(f'produto', product)
+    
             if not product:
                 return Response(
                     {'error': f'Produto {item_data["product_id"]} não encontrado.'},
@@ -314,25 +318,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             products_url = os.getenv('PRODUCTS_SERVICE_URL', 'http://gestao-produtos-service:8002')
             token = request.headers.get('Authorization', '').replace('Bearer ', '')
             
-            print(f'Requesting product {product_id} from products service')
-            print(f'URL: {products_url}/api/v1/produtos/produto/{product_id}/')
-            
-        
             response = requests.get(
                 f'{products_url}/api/v1/produtos/produto/{product_id}/',
                 timeout=5
             )
             
-            print(f'Response status: {response.status_code}')
-            print(f'Response content: {response.text}')
-
             if response.status_code == 200:
                 return response.json()
                 
-            print(f'Error response from products service: {response.text}')
             return None
         except Exception as e:
-            print(f'Exception in _get_product: {str(e)}')
             return None
     
     def _get_address(self, user_id, address_id, request):

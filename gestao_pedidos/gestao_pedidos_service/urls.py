@@ -23,4 +23,7 @@ urlpatterns = [
     
     # Cancelar pedido
     path('<uuid:pk>/cancel/', OrderViewSet.as_view({'post': 'cancel'}), name='orders-cancel'),
+
+    #Get pedido por id
+    path('pedido/<uuid:pk>/', OrderViewSet.as_view({'get': 'get_order_by_id'}), name='order_by_id'),
 ]
