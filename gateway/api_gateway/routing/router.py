@@ -67,10 +67,7 @@ class MicroserviceRouter(APIView):
             ('buscar', 'GET'),
             
             # Recomendações (leitura pública)
-            ('recomendacoes', 'GET'),
-            ('obter_recomendacoes', 'GET'),
-            ('avaliacoes', 'GET'),
-            ('por_produto', 'GET'),
+            
             
             # Health check
             'health',
