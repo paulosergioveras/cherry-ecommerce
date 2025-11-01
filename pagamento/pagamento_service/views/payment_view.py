@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+import logging
 from django.db import transaction
 from decimal import Decimal
 import requests
@@ -9,6 +10,8 @@ import os
 import random
 import string
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
 
 from ..models import (
     Payment,
@@ -95,7 +98,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         payment_method = serializer.validated_data['payment_method']
         
         try:
-            order_data = self._get_order_data(order_id, user.id)
+            order_data = self._get_order_data(order_id, user.id, request)
             
             if not order_data:
                 return Response({
@@ -281,21 +284,39 @@ class PaymentViewSet(viewsets.ModelViewSet):
         
         return Response(stats)
     
-    def _get_order_data(self, order_id, user_id):
+    def _get_order_data(self, order_id, user_id, request=None):
         orders_url = os.getenv('ORDERS_SERVICE_URL', 'http://gestao-pedidos-service:8003')
-    
+
+        headers = {'Content-Type': 'application/json'}
+        if request is not None:
+            for h in [
+                'X-Forwarded-From-Gateway', 'X-User-ID', 'X-User-Email', 'X-User-Nome',
+                'X-User-Is-Admin', 'X-User-Is-Staff', 'X-User-CPF', 'X-User-Role', 'Authorization'
+            ]:
+                val = request.headers.get(h)
+                if val:
+                    headers[h] = val
+
         try:
             response = requests.get(
                 f'{orders_url}/api/v1/orders/pedido/{order_id}/',
-                timeout=5
+                timeout=5,
+                headers=headers if headers else None
             )
-            
+
+            logger.debug(f"GET {orders_url}/api/v1/orders/pedido/{order_id}/ -> status={response.status_code}")
+            try:
+                logger.debug(f"orders response body: {response.text}")
+            except Exception:
+                pass
+
             if response.status_code == 200:
                 return response.json()
-        except:
-            pass
-        
-        return None
+            else:
+                return None
+        except requests.RequestException as e:
+            logger.exception(f"Erro ao conectar com serviço de pedidos: {e}")
+            return None
     
     def _process_card_payment(self, payment, data):
         card_number = data['card_number'].replace(' ', '')
@@ -339,15 +360,26 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     def _update_order_status(self, order_id, new_status):
         orders_url = os.getenv('ORDERS_SERVICE_URL', 'http://gestao-pedidos-service:8003')
-        
+        auth_header = None
+        try:
+            # Try to get the original Authorization header from the current request
+            auth_header = getattr(self, 'request', None) and self.request.headers.get('Authorization')
+        except Exception:
+            auth_header = None
+
+        headers = {'Content-Type': 'application/json'}
+        if auth_header:
+            headers['Authorization'] = auth_header
+
         try:
             requests.post(
                 f'{orders_url}/api/v1/orders/{order_id}/update-status/',
                 json={'status': new_status},
-                timeout=5
+                timeout=5,
+                headers=headers
             )
-        except:
-            pass
+        except requests.RequestException:
+            logger.exception('Falha ao atualizar status do pedido')
     
     def _get_card_brand(self, card_number):
         first_digit = card_number[0]

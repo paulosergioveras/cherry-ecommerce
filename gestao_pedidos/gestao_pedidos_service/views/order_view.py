@@ -186,6 +186,20 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
         serializer = self.get_serializer(order)
         return Response(serializer.data)
+
+    def get_order_by_id(self, request, pk=None):
+        try:
+            order = self.get_queryset().get(pk=pk)
+        except Order.DoesNotExist:
+            return Response({'error': 'Pedido não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        if not (hasattr(user, 'is_admin') and (user.is_admin or user.is_admin_master)):
+            if order.user_id != getattr(user, 'id', None):
+                return Response({'error': 'Acesso negado.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(order)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
