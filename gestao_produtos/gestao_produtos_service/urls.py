@@ -64,4 +64,6 @@ urlpatterns = [
 
     #Get produto por id
     path('produto/<int:pk>/', ProductViewSet.as_view({'get': 'get_product_by_id'}), name='product_by_id'),
+    path('imagem/produto/<int:pk>/', ProductViewSet.as_view({'get': 'get_product_image'}), name='get_product_image')
+
 ]

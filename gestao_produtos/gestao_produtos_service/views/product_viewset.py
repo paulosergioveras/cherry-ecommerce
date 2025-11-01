@@ -288,3 +288,15 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': 'Imagem não encontrada.'
             }, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['GET'])
+    def get_product_image(self, request, pk=None):
+        try:
+            images = ProductImage.objects.filter(product=pk)
+            if not images.exists():
+                return Response({'error': 'Imagens não encontradas.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = ProductImageSerializer(images, many=True, context={'request': request})
+            return Response({'images': serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f'Erro ao buscar imagens: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
